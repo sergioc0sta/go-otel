@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  go-otel:
+    image: golang:1.24
+    container_name: temperature_api_dev
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "8080:8080"
+    command: sh -c "go run ./cmd/server"
+    environment:
+      - GO111MODULE=on
