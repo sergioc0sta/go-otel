@@ -4,19 +4,22 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/sergioc0sta/go-otel/config"
 	"github.com/sergioc0sta/go-otel/internal/infra/handlers"
 	"github.com/sergioc0sta/go-otel/internal/infra/temperature"
 )
 
-const (
-	viaCepAPI = "http://viacep.com.br/ws/"
-	tempAPI   = "https://api.hgbrasil.com/weather?format=json-cors&city_name="
-)
+func init() {
+	err := config.LoadConfig("./.env")
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+		panic(err)
+	}
+}
 
 func main() {
-
 	mux := http.NewServeMux()
-	temperatureClient := temperature.NewTemperatureClient(viaCepAPI, tempAPI)
+	temperatureClient := temperature.NewTemperatureClient(config.Cfg.ViaCepAPI, config.Cfg.WeatherAPI)
 
 	mux.HandleFunc("/health", handlers.HealthHandler)
 	mux.HandleFunc("/temp", handlers.WeatherHandler(temperatureClient))
