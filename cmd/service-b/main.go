@@ -8,7 +8,6 @@ import (
 	"github.com/sergioc0sta/go-otel/internal/infra/handlers"
 )
 
-
 func init(){
 	err := config.LoadConfig("./.env")
 	if err != nil {
