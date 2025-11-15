@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func Fetcher(ctx context.Context, fullURL string, out any) error {
+func Fetcher(ctx context.Context, fullURL string, out interface{}) error {
 	rq := &http.Client{
 		Timeout: 5 * time.Millisecond,
 	}
