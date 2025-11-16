@@ -2,23 +2,25 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
+	"github.com/sergioc0sta/go-otel/config"
 	"github.com/sergioc0sta/go-otel/internal/infra/dto"
-	// "github.com/sergioc0sta/go-otel/internal/util"
 	"github.com/sergioc0sta/go-otel/internal/validate"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func CepHandler(w http.ResponseWriter, r *http.Request) {
 	var cepDto dto.CepInput
 	var temperatureAPI dto.TemperatureResponse
-
 	client := &http.Client{
-		Timeout: 5 * time.Second,
+		Timeout:   5 * time.Second,
+		Transport: otelhttp.NewTransport(http.DefaultTransport),
 	}
-
 	err := json.NewDecoder(r.Body).Decode(&cepDto)
+
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 	}
@@ -30,10 +32,17 @@ func CepHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	req, _ := http.NewRequest("GET", "http://localhost:8080/temperature?cep="+cepDto.Cep, nil)
+	fullURL := fmt.Sprintf("%s:%s/temperature?cep=%s", config.Cfg.ServiceAPI, config.Cfg.ServiceBPort, cepDto.Cep)
+	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, fullURL, nil)
+
+	if err != nil {
+		http.Error(w, "error creating request", http.StatusInternalServerError)
+		return
+	}
+
 	result, err := client.Do(req)
 
-	if err != nil || result.StatusCode != http.StatusOK{ 
+	if err != nil || result.StatusCode != http.StatusOK {
 		http.Error(w, "can not find zipcode", http.StatusNotFound)
 		return
 	}

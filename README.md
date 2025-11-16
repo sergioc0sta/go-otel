@@ -37,6 +37,20 @@ Two Go services:
 - Spans in B: `cep.lookup` and `weather.lookup`.
 - Export to Zipkin (e.g., `http://localhost:9411/api/v2/spans`).
 
+### Como rodar localmente
+- Suba o Zipkin localmente (`docker run -d -p 9411:9411 openzipkin/zipkin` ou use o serviço definido no `docker-compose`).
+- Configure as variáveis de ambiente esperadas (veja `.env`). Cada serviço precisa do próprio `OTEL_SERVICE_NAME`:
+  ```bash
+  # Terminal 1
+  OTEL_SERVICE_NAME=service-b go run ./cmd/service-b
+
+  # Terminal 2
+  OTEL_SERVICE_NAME=service-a go run ./cmd/service-a
+  ```
+- `SERVICE_B_URL` aponta para o endereço usado pela API A para chamar a API B (padrão `http://localhost:8080`).
+- `OTEL_EXPORTER_ZIPKIN_ENDPOINT` deve apontar para `http://<zipkin-host>:9411/api/v2/spans`.
+- As requisições HTTP de entrada/saída já são instrumentadas via `otelhttp` e o serviço B cria spans dedicados (`cep.lookup` e `weather.lookup`) para as chamadas externas.
+
 ## Suggested ENV
 - **A:** `PORT`, `SERVICE_B_URL`, `OTEL_EXPORTER_ZIPKIN_ENDPOINT`, `OTEL_SERVICE_NAME`
 - **B:** `PORT`, `CEP_PROVIDER_URL`, `WEATHER_PROVIDER_URL`, `OTEL_EXPORTER_ZIPKIN_ENDPOINT`, `OTEL_SERVICE_NAME`

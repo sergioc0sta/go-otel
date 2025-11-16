@@ -1,26 +1,37 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
+	"fmt"
 
 	"github.com/sergioc0sta/go-otel/config"
 	"github.com/sergioc0sta/go-otel/internal/infra/handlers"
+	"github.com/sergioc0sta/go-otel/internal/infra/telemetry"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
-func init(){
+func init() {
 	err := config.LoadConfig("./.env")
 	if err != nil {
 		log.Fatalf("failed to load config: %v", err)
 		panic(err)
 	}
 }
-func main(){
-		mux := http.NewServeMux()
+func main() {
+	ctx := context.Background()
+	shutdown, err := telemetry.SetupProvider(ctx, config.Cfg.ServiceNameB, config.Cfg.OTelExporterEndpoint)
 
-		mux.HandleFunc("/temperature", handlers.TemperatureHandler)
+	if err != nil {
+		log.Fatalf("failed to setup tracer provider: %v", err)
+	}
 
-		log.Println("Service B is running on 8080 port...")
-		http.ListenAndServe(":8080", mux)
+	defer shutdown(ctx)
+
+	mux := http.NewServeMux()
+	mux.Handle("/temperature", otelhttp.NewHandler(http.HandlerFunc(handlers.TemperatureHandler), "temperature.handler"))
+	log.Printf("Service B is running on %s port...", config.Cfg.ServiceBPort)
+	port :=fmt.Sprintf(":%s", config.Cfg.ServiceBPort)
+	http.ListenAndServe(port, mux)
 }
-
