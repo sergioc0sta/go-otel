@@ -44,6 +44,6 @@ Run  `docker-compose up --build` :
 - `zipkin` (porta `9411`)
 
 Instead of if you have the `make` installed
-- ```bash
+- ```sh
     make run-compose-up
     ```
