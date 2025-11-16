@@ -1,14 +1,40 @@
 version: "3.8"
 
 services:
-  go-otel:
+  service-a:
     image: golang:1.24
-    container_name: temperature_api_dev
+    container_name: go-otel-service-a
+    working_dir: /app
+    volumes:
+      - .:/app
+    ports:
+      - "8081:8081"
+    command: sh -c "go run ./cmd/service-a"
+    environment:
+      - GO111MODULE=on
+      - SERVICE_API=http://service-b
+      - OTEL_EXPORTER_ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
+    depends_on:
+      - service-b
+      - zipkin
+
+  service-b:
+    image: golang:1.24
+    container_name: go-otel-service-b
     working_dir: /app
     volumes:
       - .:/app
     ports:
       - "8080:8080"
-    command: sh -c "go run ./cmd/server"
+    command: sh -c "go run ./cmd/service-b"
     environment:
       - GO111MODULE=on
+      - OTEL_EXPORTER_ZIPKIN_ENDPOINT=http://zipkin:9411/api/v2/spans
+    depends_on:
+      - zipkin
+
+  zipkin:
+    image: openzipkin/zipkin:latest
+    container_name: zipkin
+    ports:
+      - "9411:9411"

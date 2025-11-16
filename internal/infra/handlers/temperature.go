@@ -10,6 +10,7 @@ import (
 
 	"github.com/sergioc0sta/go-otel/config"
 	"github.com/sergioc0sta/go-otel/internal/infra/dto"
+	"github.com/sergioc0sta/go-otel/internal/validate"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -18,16 +19,15 @@ import (
 func TemperatureHandler(w http.ResponseWriter, r *http.Request) {
 	var location dto.LocationResponse
 	var temperatureAPI dto.TemperatureAPIResponse
-
-	fmt.Println("Chamado B")
 	tracer := otel.Tracer("service-b")
-
 	client := &http.Client{
 		Timeout:   30 * time.Second,
 		Transport: otelhttp.NewTransport(http.DefaultTransport),
 	}
 	cep := r.URL.Query().Get("cep")
-	if cep == "" {
+		
+	idValid := validate.CepValidator(cep)
+	if !idValid { 
 		http.Error(w, "invalid zipcode", http.StatusUnprocessableEntity)
 		return
 	}
